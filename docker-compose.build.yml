@@ -1,0 +1,11 @@
+# Override to build the image from source instead of pulling it from GHCR.
+# Required when using a custom OBSIDECK_BASE_PATH (the prefix is baked in at build time).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+services:
+  obsideck:
+    image: obsideck:local
+    build:
+      context: .
+      args:
+        OBSIDECK_BASE_PATH: ${OBSIDECK_BASE_PATH:-/obsideck}

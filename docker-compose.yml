@@ -1,0 +1,68 @@
+name: obsideck
+
+services:
+  obsideck:
+    # Prebuilt multi-arch image (linux/amd64, linux/arm64). To build from source:
+    #   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+    image: ghcr.io/ops-nc/obsideck:${OBSIDECK_VERSION:-latest}
+    container_name: obsideck
+    restart: unless-stopped
+    init: true
+    user: "${OBSIDECK_UID:-1000}:${OBSIDECK_GID:-1000}"
+    environment:
+      OBSIDIAN_VAULT_PATH: /vault
+      OBSIDECK_BASE_PATH: ${OBSIDECK_BASE_PATH:-/obsideck}
+      OBSIDECK_VAULT_NAME: ${OBSIDECK_VAULT_NAME:-Obsidian}
+      OBSIDECK_WATCH_POLLING: ${OBSIDECK_WATCH_POLLING:-false}
+      OBSIDECK_POLL_INTERVAL: ${OBSIDECK_POLL_INTERVAL:-1000}
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    volumes:
+      # Only the vault is mounted. The path contains spaces: long syntax + quotes.
+      - type: bind
+        source: "${OBSIDIAN_VAULT_HOST_PATH:?Set OBSIDIAN_VAULT_HOST_PATH in .env (see .env.example)}"
+        target: /vault
+    # No published port: only reachable by Envoy on the private network.
+    expose:
+      - "3000"
+    networks:
+      - backend
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  envoy:
+    image: envoyproxy/envoy:v1.39-latest
+    container_name: obsideck-envoy
+    restart: unless-stopped
+    depends_on:
+      obsideck:
+        condition: service_healthy
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "warn"]
+    volumes:
+      - ./infra/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+    # Bound to localhost only: the tailnet reaches it through Tailscale Serve.
+    ports:
+      - "127.0.0.1:${OBSIDECK_HTTP_PORT:-8088}:8080"
+    networks:
+      - backend
+      - edge
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9901 && printf 'GET /ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q LIVE <&3"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  # Internal network: no egress to the internet, no published ports.
+  backend:
+    internal: true
+  edge: {}
