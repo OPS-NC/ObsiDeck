@@ -62,6 +62,7 @@ export function Sidebar({ onClose, closeLabel = "Hide sidebar" }: { onClose: () 
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Escape") {
+                e.preventDefault();
                 setQuery("");
                 inputRef.current?.blur();
               }

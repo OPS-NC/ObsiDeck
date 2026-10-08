@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useWorkspace } from "@/lib/client/store";
 import { useMediaQuery, useTheme, useVaultEvents } from "@/lib/client/hooks";
-import { closeNote, currentFolder, flushSave, noteFromUrl, openNote, refreshTree } from "@/lib/client/actions";
+import { closeNote, currentFolder, flushSave, goHome, noteFromUrl, openNote, refreshTree } from "@/lib/client/actions";
 import { Sidebar } from "../sidebar/Sidebar";
 import { NoteView } from "../workspace/NoteView";
 import type { EditorHandle } from "../editor/MarkdownEditor";
@@ -105,6 +105,10 @@ export function AppShell() {
           e.preventDefault();
           openSearchInNote();
         }
+      } else if (e.key === "Escape" && !mod && !e.altKey && !e.shiftKey && !e.isComposing) {
+        // Menus, dialogs and the editor (completion, search panel) consume Escape first.
+        if (e.defaultPrevented || s.dialog || s.palette) return;
+        void goHome();
       }
     };
     window.addEventListener("keydown", onKey);

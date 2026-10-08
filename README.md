@@ -146,6 +146,7 @@ These rules are covered by the test suite (`npm test`), which also runs during e
 | `⌘/Ctrl F` | Find in note |
 | `⌘/Ctrl B` / `I` | Bold / italic |
 | `⌘/Ctrl \` | Toggle sidebar |
+| `Esc` | Close the note and go back to the home page |
 | `⌘/Ctrl ⌥ 1 / 2 / 3` | Edit / Split / Preview |
 | `↑` `↓` / `Home` `End` in the tree | Move between files and folders |
 | `→` / `←` in the tree | Expand / collapse a folder (or go to child / parent) |
