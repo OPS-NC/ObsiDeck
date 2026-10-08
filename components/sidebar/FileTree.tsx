@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo, useRef, useEffect } from "react";
+import { memo, useMemo, useRef, useEffect, useState, type KeyboardEvent } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronRight, FilePlus2, FileText, Folder, FolderOpen, FolderPlus, Pencil, Trash2 } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
@@ -52,6 +52,67 @@ export function FileTree() {
     if (index !== -1) virtualizer.scrollToIndex(index, { align: "auto" });
   }, [activePath, rows.length]);
 
+  // Roving tabindex: the tree is a single tab stop, arrows move between rows.
+  const [focusedPath, setFocusedPath] = useState<string | null>(null);
+  const pendingFocus = useRef<string | null>(null);
+  const indexOf = (path: string | null) => (path === null ? -1 : rows.findIndex((r) => r.node.path === path));
+  const focusIndex = [focusedPath, activePath].map(indexOf).find((i) => i !== -1) ?? 0;
+
+  // The target row may not be rendered until the virtualizer has scrolled to it.
+  useEffect(() => {
+    const path = pendingFocus.current;
+    if (path === null) return;
+    const el = scrollRef.current?.querySelector<HTMLElement>(`[data-path="${CSS.escape(path)}"]`);
+    if (el) {
+      pendingFocus.current = null;
+      el.focus({ preventScroll: true });
+    }
+  });
+
+  const moveTo = (index: number) => {
+    const row = rows[Math.max(0, Math.min(rows.length - 1, index))];
+    if (!row) return;
+    pendingFocus.current = row.node.path;
+    setFocusedPath(row.node.path);
+    virtualizer.scrollToIndex(rows.indexOf(row), { align: "auto" });
+  };
+
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.metaKey || e.ctrlKey || e.altKey || !(e.target instanceof HTMLElement) || !e.target.dataset.path) return;
+    const index = indexOf(e.target.dataset.path);
+    const row = rows[index];
+    if (!row) return;
+    const isOpenFolder = row.node.type === "folder" && Boolean(expanded[row.node.path]);
+    const { toggleFolder } = useWorkspace.getState();
+    switch (e.key) {
+      case "ArrowDown":
+        moveTo(index + 1);
+        break;
+      case "ArrowUp":
+        moveTo(index - 1);
+        break;
+      case "Home":
+        moveTo(0);
+        break;
+      case "End":
+        moveTo(rows.length - 1);
+        break;
+      case "ArrowRight":
+        if (row.node.type !== "folder") return;
+        if (isOpenFolder) {
+          if (rows[index + 1]?.depth === row.depth + 1) moveTo(index + 1);
+        } else toggleFolder(row.node.path, true);
+        break;
+      case "ArrowLeft":
+        if (isOpenFolder) toggleFolder(row.node.path, false);
+        else if (row.depth > 0) moveTo(indexOf(dirname(row.node.path)));
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+  };
+
   const rootMenu: MenuEntry[] = [
     { label: "New note", icon: <FilePlus2 />, shortcut: "Mod+N", onSelect: () => openDialog({ kind: "new-note", folder: "" }) },
     { label: "New folder", icon: <FolderPlus />, onSelect: () => openDialog({ kind: "new-folder", folder: "" }) },
@@ -61,7 +122,7 @@ export function FileTree() {
 
   return (
     <ContextMenu entries={rootMenu}>
-      <div ref={scrollRef} className="scroll-thin min-h-0 flex-1 overflow-y-auto px-2 pb-6" role="tree" aria-label="Vault files">
+      <div ref={scrollRef} className="scroll-thin min-h-0 flex-1 overflow-y-auto px-2 pb-6" role="tree" aria-label="Vault files" onKeyDown={onKeyDown}>
         {rows.length === 0 ? (
           <p className="px-3 py-6 text-center text-[12.5px] text-subtle">This vault is empty.</p>
         ) : (
@@ -78,6 +139,8 @@ export function FileTree() {
                     depth={row.depth}
                     expanded={row.node.type === "folder" && Boolean(expanded[row.node.path])}
                     active={row.node.path === activePath}
+                    tabbable={item.index === focusIndex}
+                    onFocusRow={setFocusedPath}
                   />
                 </div>
               );
@@ -98,11 +161,15 @@ const TreeRow = memo(function TreeRow({
   depth,
   expanded,
   active,
+  tabbable,
+  onFocusRow,
 }: {
   node: TreeNode;
   depth: number;
   expanded: boolean;
   active: boolean;
+  tabbable: boolean;
+  onFocusRow: (path: string) => void;
 }) {
   const isFolder = node.type === "folder";
   const parent = isFolder ? node.path : dirname(node.path);
@@ -133,6 +200,9 @@ const TreeRow = memo(function TreeRow({
         aria-expanded={isFolder ? expanded : undefined}
         aria-selected={active}
         title={node.path}
+        data-path={node.path}
+        tabIndex={tabbable ? 0 : -1}
+        onFocus={() => onFocusRow(node.path)}
         onClick={onClick}
         onKeyDown={(e) => {
           if (e.key === "F2") openDialog({ kind: "rename", path: node.path, isFolder });

@@ -147,6 +147,9 @@ These rules are covered by the test suite (`npm test`), which also runs during e
 | `⌘/Ctrl B` / `I` | Bold / italic |
 | `⌘/Ctrl \` | Toggle sidebar |
 | `⌘/Ctrl ⌥ 1 / 2 / 3` | Edit / Split / Preview |
+| `↑` `↓` / `Home` `End` in the tree | Move between files and folders |
+| `→` / `←` in the tree | Expand / collapse a folder (or go to child / parent) |
+| `Enter` in the tree | Open a note, toggle a folder |
 | `F2` / `Delete` in the tree | Rename / delete |
 
 Browsers reserve `⌘N` for a new window; use `Alt N`, or install ObsiDeck as an app from Chrome so the shortcut reaches the page.
