@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import type { NextConfig } from "next";
 
 // basePath is inlined into the client bundles at build time: changing
@@ -13,6 +14,18 @@ function normalizeBasePath(raw: string | undefined): string {
 
 const basePath = normalizeBasePath(process.env.OBSIDECK_BASE_PATH);
 
+// Shown in the sidebar footer. CI passes both as Docker build args; local builds read git.
+function gitCommit(): string {
+  try {
+    return execSync("git rev-parse --short=7 HEAD", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+  } catch {
+    return "";
+  }
+}
+
+const buildVersion = process.env.OBSIDECK_BUILD_VERSION || "dev";
+const buildCommit = (process.env.OBSIDECK_BUILD_COMMIT || gitCommit()).slice(0, 7);
+
 const nextConfig: NextConfig = {
   basePath,
   output: "standalone",
@@ -20,6 +33,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
+    NEXT_PUBLIC_BUILD_VERSION: buildVersion,
+    NEXT_PUBLIC_BUILD_COMMIT: buildCommit,
   },
   async headers() {
     return [

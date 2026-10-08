@@ -13,7 +13,12 @@ FROM node:${NODE_VERSION} AS builder
 WORKDIR /app
 # basePath is inlined into the client bundle at build time.
 ARG OBSIDECK_BASE_PATH=/obsideck
+# Build label shown in the sidebar footer (set by CI).
+ARG OBSIDECK_BUILD_VERSION=dev
+ARG OBSIDECK_BUILD_COMMIT=
 ENV OBSIDECK_BASE_PATH=${OBSIDECK_BASE_PATH} \
+    OBSIDECK_BUILD_VERSION=${OBSIDECK_BUILD_VERSION} \
+    OBSIDECK_BUILD_COMMIT=${OBSIDECK_BUILD_COMMIT} \
     NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

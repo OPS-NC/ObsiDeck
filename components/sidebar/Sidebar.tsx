@@ -96,6 +96,11 @@ export function Sidebar({ onClose, closeLabel = "Hide sidebar" }: { onClose: () 
       )}
 
       {query.trim() ? <SearchPanel query={query.trim()} /> : <FileTree />}
+
+      <p className="shrink-0 truncate px-4 py-2 font-mono text-[10.5px] text-subtle select-text">
+        {process.env.NEXT_PUBLIC_BUILD_VERSION}
+        {process.env.NEXT_PUBLIC_BUILD_COMMIT && ` (${process.env.NEXT_PUBLIC_BUILD_COMMIT})`}
+      </p>
     </div>
   );
 }

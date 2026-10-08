@@ -60,6 +60,9 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ env.IMAGE }}
+          build-args: |
+            OBSIDECK_BUILD_VERSION=${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
+            OBSIDECK_BUILD_COMMIT=${{ github.sha }}
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=${{ env.PLATFORM_PAIR }}
           cache-to: type=gha,mode=max,scope=${{ env.PLATFORM_PAIR }}
