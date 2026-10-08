@@ -122,7 +122,7 @@ export function FileTree() {
 
   return (
     <ContextMenu entries={rootMenu}>
-      <div ref={scrollRef} className="scroll-thin min-h-0 flex-1 overflow-y-auto px-2 pb-6" role="tree" aria-label="Vault files" onKeyDown={onKeyDown}>
+      <div ref={scrollRef} className="scroll-thin min-h-0 flex-1 overflow-y-auto px-2 pt-1 pb-6" role="tree" aria-label="Vault files" onKeyDown={onKeyDown}>
         {rows.length === 0 ? (
           <p className="px-3 py-6 text-center text-[12.5px] text-subtle">This vault is empty.</p>
         ) : (
@@ -212,7 +212,7 @@ const TreeRow = memo(function TreeRow({
         }}
         style={{ paddingLeft: 8 + depth * 14 }}
         className={cn(
-          "group flex h-[26px] w-full items-center gap-1.5 rounded-md pr-2 text-left text-[13px] transition-colors duration-75",
+          "group flex h-[26px] w-full items-center gap-1.5 rounded-md pr-2 text-left text-[13px] transition-colors duration-75 focus-visible:outline-1 focus-visible:-outline-offset-1",
           active ? "bg-accent-soft text-fg" : "text-muted hover:bg-hover hover:text-fg",
         )}
       >
